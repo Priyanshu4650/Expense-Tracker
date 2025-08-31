@@ -5,10 +5,7 @@ from typing import List
 import sys
 import os
 import sqlite3
-try:
-    import jwt
-except ImportError:
-    import PyJWT as jwt
+import jwt
 import bcrypt
 from datetime import datetime, timedelta, timezone
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -241,9 +238,11 @@ async def set_monthly_plan(plan_data: dict, user_id: str = Depends(verify_token)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS monthly_plans (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            month TEXT UNIQUE NOT NULL,
+            month TEXT NOT NULL,
             income REAL NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            user_id INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(month, user_id)
         )
     ''')
     
@@ -253,7 +252,8 @@ async def set_monthly_plan(plan_data: dict, user_id: str = Depends(verify_token)
             category TEXT NOT NULL,
             amount REAL NOT NULL,
             month TEXT NOT NULL,
-            UNIQUE(category, month)
+            user_id INTEGER NOT NULL,
+            UNIQUE(category, month, user_id)
         )
     ''')
     
@@ -262,15 +262,15 @@ async def set_monthly_plan(plan_data: dict, user_id: str = Depends(verify_token)
     
     # Set income
     cursor.execute(
-        "INSERT OR REPLACE INTO monthly_plans (month, income) VALUES (?, ?)",
-        (month, income)
+        "INSERT OR REPLACE INTO monthly_plans (month, income, user_id) VALUES (?, ?, ?)",
+        (month, income, user_id)
     )
     
     # Set budgets
     for category, amount in plan_data.get('budgets', {}).items():
         cursor.execute(
-            "INSERT OR REPLACE INTO budgets (category, amount, month) VALUES (?, ?, ?)",
-            (category, amount, month)
+            "INSERT OR REPLACE INTO budgets (category, amount, month, user_id) VALUES (?, ?, ?, ?)",
+            (category, amount, month, user_id)
         )
     
     conn.commit()
@@ -284,12 +284,12 @@ async def get_monthly_plan(month: str, user_id: str = Depends(verify_token)):
     cursor = conn.cursor()
     
     # Get income
-    cursor.execute("SELECT income FROM monthly_plans WHERE month = ?", (month,))
+    cursor.execute("SELECT income FROM monthly_plans WHERE month = ? AND user_id = ?", (month, user_id))
     income_result = cursor.fetchone()
     income = income_result[0] if income_result else 0
     
     # Get budgets
-    cursor.execute("SELECT category, amount FROM budgets WHERE month = ?", (month,))
+    cursor.execute("SELECT category, amount FROM budgets WHERE month = ? AND user_id = ?", (month, user_id))
     budgets = {row[0]: row[1] for row in cursor.fetchall()}
     
     conn.close()
@@ -300,8 +300,6 @@ async def get_monthly_plan(month: str, user_id: str = Depends(verify_token)):
         "total_planned": sum(budgets.values())
     }
 
-
-
 @router.get("/budget-status/{month}")
 async def get_budget_status(month: str, user_id: str = Depends(verify_token)):
     """Get budget vs actual spending status"""
@@ -309,16 +307,16 @@ async def get_budget_status(month: str, user_id: str = Depends(verify_token)):
     cursor = conn.cursor()
     
     # Get budgets
-    cursor.execute("SELECT category, amount FROM budgets WHERE month = ?", (month,))
+    cursor.execute("SELECT category, amount FROM budgets WHERE month = ? AND user_id = ?", (month, user_id))
     budgets = {row[0]: row[1] for row in cursor.fetchall()}
     
     # Get actual spending for the month
     cursor.execute("""
         SELECT category, SUM(amount) as spent
         FROM expenses 
-        WHERE strftime('%Y-%m', created_at) = ?
+        WHERE strftime('%Y-%m', created_at) = ? AND user_id = ?
         GROUP BY category
-    """, (month,))
+    """, (month, user_id))
     spending = {row[0]: row[1] for row in cursor.fetchall()}
     
     conn.close()
@@ -345,38 +343,41 @@ async def get_expenses_analytics(user_id: str = Depends(verify_token)):
     cursor.execute("""
         SELECT strftime('%Y-%m', created_at) as month, SUM(amount) as total
         FROM expenses 
+        WHERE user_id = ?
         GROUP BY strftime('%Y-%m', created_at)
         ORDER BY month DESC
         LIMIT 6
-    """)
+    """, (user_id,))
     monthly_trends = [{'month': row[0], 'total': row[1]} for row in cursor.fetchall()]
     
     # Category breakdown
     cursor.execute("""
         SELECT category, SUM(amount) as total, COUNT(*) as count
         FROM expenses 
+        WHERE user_id = ?
         GROUP BY category
         ORDER BY total DESC
-    """)
+    """, (user_id,))
     category_breakdown = [{'category': row[0], 'total': row[1], 'count': row[2]} for row in cursor.fetchall()]
     
     # Recent activity (last 7 days)
     cursor.execute("""
         SELECT DATE(created_at) as date, SUM(amount) as total
         FROM expenses 
-        WHERE created_at >= date('now', '-7 days')
+        WHERE created_at >= date('now', '-7 days') AND user_id = ?
         GROUP BY DATE(created_at)
         ORDER BY date DESC
-    """)
+    """, (user_id,))
     recent_activity = [{'date': row[0], 'total': row[1]} for row in cursor.fetchall()]
     
     # Top expenses
     cursor.execute("""
         SELECT category, amount, description, created_at
         FROM expenses 
+        WHERE user_id = ?
         ORDER BY amount DESC
         LIMIT 5
-    """)
+    """, (user_id,))
     top_expenses = [{'category': row[0], 'amount': row[1], 'description': row[2], 'date': row[3]} for row in cursor.fetchall()]
     
     conn.close()

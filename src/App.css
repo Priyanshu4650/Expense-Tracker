@@ -13,12 +13,41 @@ body {
 
 .app {
   min-height: 100vh;
-  padding: 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
+.main-layout {
+  display: flex;
+  flex: 1;
+  gap: 0;
+  min-height: calc(100vh - 80px);
+}
+
+.sidebar {
+  width: 33.33%;
+  min-width: 300px;
+  background: white;
+  padding: 20px;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  overflow-y: auto;
+  max-height: calc(100vh - 80px);
+  flex-shrink: 0;
+}
+
+.sidebar h2 {
+  color: #4a5568;
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+.content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  max-height: calc(100vh - 100px);
 }
 
 .header {
@@ -26,10 +55,11 @@ body {
   justify-content: space-between;
   align-items: center;
   background: white;
-  padding: 20px 30px;
-  border-radius: 15px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-  margin-bottom: 30px;
+  padding: 15px 30px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .header h1 {
@@ -79,68 +109,32 @@ body {
   box-shadow: 0 8px 25px rgba(237, 137, 54, 0.4);
 }
 
-.dashboard {
+.chart-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 20px;
+}
+
+.chart-card h3 {
+  margin: 0 0 10px 0;
+  color: #2d3748;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  justify-content: center;
+}
+
+.forms-section, .expenses-section {
   background: white;
-  padding: 30px;
+  padding: 20px;
   border-radius: 15px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-  margin-bottom: 30px;
-}
-
-.dashboard h2 {
-  color: #4a5568;
-  margin-bottom: 25px;
-  font-size: 1.8rem;
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-}
-
-.card {
-  background: #f8fafc;
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-}
-
-.card h3 {
-  color: #2d3748;
-  margin-bottom: 15px;
-  font-size: 1.1rem;
-}
-
-.trend-item, .category-item, .activity-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.trend-item:last-child, .category-item:last-child, .activity-item:last-child {
-  border-bottom: none;
-}
-
-.expense-item {
-  padding: 10px 0;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.expense-item:last-child {
-  border-bottom: none;
-}
-
-.expense-main {
-  font-weight: 600;
-  color: #2d3748;
-}
-
-.expense-desc {
-  font-size: 12px;
-  color: #718096;
-  margin-top: 4px;
+  margin-bottom: 20px;
 }
 
 .summary-cards {
@@ -213,14 +207,6 @@ body {
   background: #fed7d7;
 }
 
-.forms-section {
-  background: white;
-  padding: 30px;
-  border-radius: 15px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-  margin-bottom: 30px;
-}
-
 .form {
   display: flex;
   gap: 15px;
@@ -247,13 +233,6 @@ body {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.expenses-section {
-  background: white;
-  padding: 30px;
-  border-radius: 15px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
 }
 
 .expenses-section h2 {
@@ -577,15 +556,75 @@ body {
   color: #4c51bf;
 }
 
+@media (max-width: 900px) {
+  .main-layout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    max-height: none;
+    padding: 15px;
+  }
+  
+  .sidebar .chart-card {
+    display: inline-block;
+    width: calc(33.33% - 10px);
+    margin-right: 15px;
+    vertical-align: top;
+  }
+  
+  .content {
+    max-height: none;
+  }
+}
+
 @media (max-width: 768px) {
   .header {
     flex-direction: column;
     gap: 15px;
     text-align: center;
+    padding: 15px 20px;
+  }
+  
+  .header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .app {
+    padding: 0;
+  }
+  
+  .sidebar {
+    padding: 15px;
+  }
+  
+  .sidebar .chart-card {
+    width: 100%;
+    margin-right: 0;
+    display: block;
+  }
+  
+  .content {
+    padding: 15px;
+  }
+  
+  .chart-card {
+    padding: 10px;
+  }
+  
+  .chart-card h3 {
+    font-size: 0.8rem;
   }
   
   .summary-cards {
     justify-content: center;
+    gap: 15px;
+  }
+  
+  .summary-card {
+    min-width: 120px;
+    padding: 15px 20px;
   }
   
   .form {
@@ -597,6 +636,7 @@ body {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
+    padding: 15px;
   }
   
   .expense-actions {
@@ -606,6 +646,7 @@ body {
   .modal {
     margin: 20px;
     width: calc(100% - 40px);
+    padding: 20px;
   }
   
   .budget-input {
@@ -628,5 +669,9 @@ body {
   
   .permission-actions {
     flex-direction: column;
+  }
+  
+  .forms-section, .expenses-section {
+    padding: 15px;
   }
 }
