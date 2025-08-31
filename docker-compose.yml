@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: expense-tracker-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/expenses.db:/app/expenses.db
+    environment:
+      - PYTHONPATH=/app
+
+  frontend:
+    build: .
+    container_name: expense-tracker-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000

@@ -1,18 +1,16 @@
-FROM node:22-slim
+FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json* /app/
-
-# Install dependencies
+COPY package*.json ./
 RUN npm install
 
-# Copy source code
-COPY . /app/
+COPY . .
+RUN npm run build
 
-# Expose Vite dev server port
-EXPOSE 5173
+FROM nginx:alpine
+COPY --from=0 /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Run Vite in dev mode, accessible outside container
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
