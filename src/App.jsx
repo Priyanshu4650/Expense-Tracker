@@ -84,7 +84,7 @@ function App() {
   const [expenses, setExpenses] = useState([])
   const [summary, setSummary] = useState({ total: 0, categories: {} })
   const [categories, setCategories] = useState([])
-  const [formData, setFormData] = useState({ category: '', amount: '', description: '' })
+  const [formData, setFormData] = useState({ category: '', amount: '', description: '', payment_date: new Date().toISOString().split('T')[0] })
   const [newCategory, setNewCategory] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [analytics, setAnalytics] = useState(null)
@@ -213,7 +213,7 @@ function App() {
 
   const fetchMonthlyPlan = async (month) => {
     try {
-      const response = await fetch(`https://expense-tracker-1-frb7.onrender.com/api/monthly-plan/${month}`, {
+      const response = await fetch(`http://localhost:8000/api/budget/monthly-plan/${month}`, {
         headers: getAuthHeaders()
       })
       const data = await response.json()
@@ -229,7 +229,7 @@ function App() {
 
   const fetchBudgetStatus = async (month) => {
     try {
-      const response = await fetch(`https://expense-tracker-1-frb7.onrender.com/api/budget-status/${month}`, {
+      const response = await fetch(`http://localhost:8000/api/budget/budget-status/${month}`, {
         headers: getAuthHeaders()
       })
       const data = await response.json()
@@ -241,7 +241,7 @@ function App() {
 
   const fetchAnalytics = async () => {
     try {
-      const response = await fetch('https://expense-tracker-1-frb7.onrender.com/api/expenses/analytics', {
+      const response = await fetch('http://localhost:8000/api/expenses/analytics', {
         headers: getAuthHeaders()
       })
       const data = await response.json()
@@ -260,7 +260,7 @@ function App() {
     e.preventDefault()
     try {
       const endpoint = authMode === 'login' ? 'login' : 'register'
-      const response = await fetch(`https://expense-tracker-1-frb7.onrender.com/api/${endpoint}`, {
+      const response = await fetch(`http://localhost:8000/api/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authForm)
@@ -302,7 +302,7 @@ function App() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('https://expense-tracker-1-frb7.onrender.com/api/categories', {
+      const response = await fetch('http://localhost:8000/api/categories', {
         headers: getAuthHeaders()
       })
       if (response.status === 401) {
@@ -321,7 +321,7 @@ function App() {
 
   const fetchExpenses = async () => {
     try {
-      const response = await fetch('https://expense-tracker-1-frb7.onrender.com/api/expenses', {
+      const response = await fetch('http://localhost:8000/api/expenses', {
         headers: getAuthHeaders()
       })
       if (response.status === 401) {
@@ -337,7 +337,7 @@ function App() {
 
   const fetchSummary = async () => {
     try {
-      const response = await fetch('https://expense-tracker-1-frb7.onrender.com/api/expenses/summary', {
+      const response = await fetch('http://localhost:8000/api/expenses/summary', {
         headers: getAuthHeaders()
       })
       if (response.status === 401) {
@@ -354,7 +354,7 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      const response = await fetch('https://expense-tracker-1-frb7.onrender.com/api/expenses', {
+      const response = await fetch('http://localhost:8000/api/expenses', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ ...formData, amount: parseFloat(formData.amount) })
@@ -363,7 +363,7 @@ function App() {
         handleLogout()
         return
       }
-      setFormData({ category: categories[0] || '', amount: '', description: '' })
+      setFormData({ category: categories[0] || '', amount: '', description: '', payment_date: new Date().toISOString().split('T')[0] })
       fetchExpenses()
       fetchSummary()
       fetchAnalytics()
@@ -404,7 +404,7 @@ function App() {
     }
 
     try {
-      await fetch('https://expense-tracker-1-frb7.onrender.com/api/monthly-plan', {
+      await fetch('http://localhost:8000/api/budget/monthly-plan', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -427,7 +427,7 @@ function App() {
     e.preventDefault()
     if (!newCategory.trim()) return
     try {
-      await fetch('https://expense-tracker-1-frb7.onrender.com/api/categories', {
+      await fetch('http://localhost:8000/api/categories', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ name: newCategory })
@@ -441,19 +441,24 @@ function App() {
 
   const handleEdit = (expense) => {
     setEditingId(expense.id)
-    setFormData({ category: expense.category, amount: expense.amount.toString(), description: expense.description })
+    setFormData({ 
+      category: expense.category, 
+      amount: expense.amount.toString(), 
+      description: expense.description,
+      payment_date: expense.payment_date || new Date().toISOString().split('T')[0]
+    })
   }
 
   const handleUpdate = async (e) => {
     e.preventDefault()
     try {
-      await fetch(`https://expense-tracker-1-frb7.onrender.com/api/expenses/${editingId}`, {
+      await fetch(`http://localhost:8000/api/expenses/${editingId}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({ ...formData, amount: parseFloat(formData.amount) })
       })
       setEditingId(null)
-      setFormData({ category: categories[0] || '', amount: '', description: '' })
+      setFormData({ category: categories[0] || '', amount: '', description: '', payment_date: new Date().toISOString().split('T')[0] })
       fetchExpenses()
       fetchSummary()
       fetchAnalytics()
@@ -465,7 +470,7 @@ function App() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this expense?')) return
     try {
-      await fetch(`https://expense-tracker-1-frb7.onrender.com/api/expenses/${id}`, {
+      await fetch(`http://localhost:8000/api/expenses/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       })
@@ -479,7 +484,7 @@ function App() {
 
   const handleCancel = () => {
     setEditingId(null)
-    setFormData({ category: categories[0] || '', amount: '', description: '' })
+    setFormData({ category: categories[0] || '', amount: '', description: '', payment_date: new Date().toISOString().split('T')[0] })
   }
 
   if (showAuthModal) {
@@ -634,6 +639,13 @@ function App() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
+              <input
+                className="input"
+                type="date"
+                value={formData.payment_date}
+                onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
+                required
+              />
               <button type="submit" className="btn btn-primary">
                 {editingId ? <><FaEdit /> Update</> : <><FaPlus /> Add</>} Expense
               </button>
@@ -653,7 +665,7 @@ function App() {
                     </div>
                     <div className="expense-details">
                       <span className="description">{expense.description}</span>
-                      <span className="date">{new Date(expense.created_at).toLocaleDateString('en-IN')}</span>
+                      <span className="date">{new Date(expense.payment_date || expense.created_at).toLocaleDateString('en-IN')}</span>
                     </div>
                   </div>
                   <div className="expense-actions">

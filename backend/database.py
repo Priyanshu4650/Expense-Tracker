@@ -1,83 +1,42 @@
-import sqlite3
+from pymongo import MongoClient
 import os
 
-DATABASE_PATH = os.path.join("/tmp", "expenses.db") if os.environ.get("RENDER") else os.path.join(os.path.dirname(__file__), "expenses.db")
+MONGODB_URL = "mongodb+srv://priyanshu022017_db_user:Dwx4cTAON4Ey7Fmb@cluster0.5pcoyiq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+DATABASE_NAME = "expense_tracker"
+
+client = MongoClient(MONGODB_URL)
+db = client[DATABASE_NAME]
+
+def get_database():
+    return db
 
 def init_database():
-    """Initialize the SQLite database with expenses and categories tables"""
-    # Ensure directory exists and is writable
-    db_dir = os.path.dirname(DATABASE_PATH)
-    if not os.path.exists(db_dir):
-        os.makedirs(db_dir, mode=0o755)
-    
-    # Create database file if it doesn't exist
-    if not os.path.exists(DATABASE_PATH):
-        open(DATABASE_PATH, 'a').close()
-        print(f"Created database file at {DATABASE_PATH}")
-    
-    conn = sqlite3.connect(DATABASE_PATH)
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS categories (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT UNIQUE NOT NULL
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS expenses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            category TEXT NOT NULL,
-            amount REAL NOT NULL,
-            description TEXT,
-            user_id INTEGER NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS monthly_plans (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            month TEXT NOT NULL,
-            income REAL NOT NULL,
-            user_id INTEGER NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(month, user_id)
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS budgets (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            category TEXT NOT NULL,
-            amount REAL NOT NULL,
-            month TEXT NOT NULL,
-            user_id INTEGER NOT NULL,
-            UNIQUE(category, month, user_id)
-        )
-    ''')
-    
-    # Insert default categories
-    default_categories = ['Rent', 'Food', 'Travelling']
-    for category in default_categories:
-        cursor.execute('INSERT OR IGNORE INTO categories (name) VALUES (?)', (category,))
-    
-    conn.commit()
-    conn.close()
-    print("Database tables created and initialized successfully")
-
-def get_db_connection():
-    """Get database connection"""
-    conn = sqlite3.connect(DATABASE_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    """Initialize MongoDB collections and default data"""
+    try:
+        # Create collections if they don't exist
+        collections = ['users', 'expenses', 'categories', 'monthly_plans', 'budgets']
+        
+        for collection_name in collections:
+            if collection_name not in db.list_collection_names():
+                db.create_collection(collection_name)
+        
+        # Insert default categories if collection is empty
+        if db.categories.count_documents({}) == 0:
+            default_categories = [
+                {"name": "Rent"},
+                {"name": "Food"}, 
+                {"name": "Travelling"}
+            ]
+            db.categories.insert_many(default_categories)
+        
+        # Create indexes for better performance
+        db.users.create_index("username", unique=True)
+        db.expenses.create_index("user_id")
+        db.monthly_plans.create_index([("month", 1), ("user_id", 1)], unique=True)
+        db.budgets.create_index([("category", 1), ("month", 1), ("user_id", 1)], unique=True)
+        
+        print("MongoDB database initialized successfully")
+        
+    except Exception as e:
+        print(f"Error initializing database: {e}")
+        raise e

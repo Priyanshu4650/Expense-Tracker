@@ -33,6 +33,7 @@ class ExpenseCreate(BaseModel):
     category: str
     amount: float
     description: str = ""
+    payment_date: str = None
 
 class Expense(BaseModel):
     id: int
@@ -141,9 +142,12 @@ async def create_expense(expense: ExpenseCreate, user_id: str = Depends(verify_t
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    # Use provided date or current date
+    payment_date = expense.payment_date if expense.payment_date else datetime.now().strftime('%Y-%m-%d')
+    
     cursor.execute(
-        "INSERT INTO expenses (category, amount, description, user_id) VALUES (?, ?, ?, ?)",
-        (expense.category, expense.amount, expense.description, user_id)
+        "INSERT INTO expenses (category, amount, description, user_id, payment_date) VALUES (?, ?, ?, ?, ?)",
+        (expense.category, expense.amount, expense.description, user_id, payment_date)
     )
     
     expense_id = cursor.lastrowid
@@ -170,9 +174,11 @@ async def update_expense(expense_id: int, expense: ExpenseCreate, user_id: str =
     conn = get_db_connection()
     cursor = conn.cursor()
     
+    payment_date = expense.payment_date if expense.payment_date else datetime.now().strftime('%Y-%m-%d')
+    
     cursor.execute(
-        "UPDATE expenses SET category = ?, amount = ?, description = ? WHERE id = ? AND user_id = ?",
-        (expense.category, expense.amount, expense.description, expense_id, user_id)
+        "UPDATE expenses SET category = ?, amount = ?, description = ?, payment_date = ? WHERE id = ? AND user_id = ?",
+        (expense.category, expense.amount, expense.description, payment_date, expense_id, user_id)
     )
     
     if cursor.rowcount == 0:
@@ -275,6 +281,18 @@ async def set_monthly_plan(plan_data: dict, user_id: str = Depends(verify_token)
     conn.commit()
     conn.close()
     return {"message": "Monthly plan set successfully"}
+
+@router.get("/debug/database-path")
+async def debug_database_path():
+    """Debug endpoint to check database path and existence"""
+    from database import DATABASE_PATH
+    import os
+    return {
+        "database_path": DATABASE_PATH,
+        "exists": os.path.exists(DATABASE_PATH),
+        "size": os.path.getsize(DATABASE_PATH) if os.path.exists(DATABASE_PATH) else 0,
+        "render_env": os.environ.get("RENDER", "false")
+    }
 
 @router.get("/monthly-plan/{month}")
 async def get_monthly_plan(month: str, user_id: str = Depends(verify_token)):
@@ -387,3 +405,49 @@ async def get_expenses_analytics(user_id: str = Depends(verify_token)):
         "recent_activity": recent_activity,
         "top_expenses": top_expenses
     }
+
+@router.get("/debug/tables")
+async def debug_tables():
+    """Debug endpoint to check database tables"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Get all tables
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables = [row[0] for row in cursor.fetchall()]
+    
+    table_info = {}
+    for table in tables:
+        cursor.execute(f"PRAGMA table_info({table})")
+        columns = cursor.fetchall()
+        cursor.execute(f"SELECT COUNT(*) FROM {table}")
+        count = cursor.fetchone()[0]
+        table_info[table] = {
+            "columns": [col[1] for col in columns],
+            "row_count": count
+        }
+    
+    conn.close()
+    return {"tables": table_info}
+
+@router.get("/debug/data/{table_name}")
+async def debug_table_data(table_name: str):
+    """Debug endpoint to view table data"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute(f"SELECT * FROM {table_name} LIMIT 10")
+        rows = cursor.fetchall()
+        cursor.execute(f"PRAGMA table_info({table_name})")
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        data = []
+        for row in rows:
+            data.append(dict(zip(columns, row)))
+        
+        conn.close()
+        return {"table": table_name, "data": data}
+    except Exception as e:
+        conn.close()
+        return {"error": str(e)}
