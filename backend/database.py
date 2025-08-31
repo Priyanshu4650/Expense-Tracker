@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-DATABASE_PATH = os.path.join(os.path.dirname(__file__), "expenses.db")
+DATABASE_PATH = os.path.join("/tmp", "expenses.db") if os.environ.get("RENDER") else os.path.join(os.path.dirname(__file__), "expenses.db")
 
 def init_database():
     """Initialize the SQLite database with expenses and categories tables"""
