@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime
 from database import init_database
 from routes import auth_routes, expense_routes, category_routes, budget_routes
 
@@ -18,6 +19,11 @@ app.add_middleware(
 async def startup_event():
     init_database()
     print("Database initialized successfully")
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
 # Include routers
 app.include_router(auth_routes.router, prefix="/api")

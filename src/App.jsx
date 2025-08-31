@@ -133,6 +133,16 @@ function App() {
     }
   }, [token])
 
+  // Keep server alive with health checks
+  useEffect(() => {
+    const keepAlive = setInterval(() => {
+      fetch('https://expense-tracker-1-frb7.onrender.com/health')
+        .catch(() => {}) // Ignore errors
+    }, 10 * 60 * 1000) // Every 10 minutes
+    
+    return () => clearInterval(keepAlive)
+  }, [])
+
   const checkNotificationPermission = () => {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission)
