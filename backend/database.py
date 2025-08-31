@@ -10,6 +10,11 @@ def init_database():
     if not os.path.exists(db_dir):
         os.makedirs(db_dir, mode=0o755)
     
+    # Create database file if it doesn't exist
+    if not os.path.exists(DATABASE_PATH):
+        open(DATABASE_PATH, 'a').close()
+        print(f"Created database file at {DATABASE_PATH}")
+    
     conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
     
@@ -69,6 +74,7 @@ def init_database():
     
     conn.commit()
     conn.close()
+    print("Database tables created and initialized successfully")
 
 def get_db_connection():
     """Get database connection"""

@@ -19,8 +19,7 @@ security = HTTPBearer()
 
 router = APIRouter()
 
-# Initialize database on startup
-init_database()
+# Database will be initialized in main.py startup event
 
 class UserCreate(BaseModel):
     username: str
