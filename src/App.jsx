@@ -136,7 +136,7 @@ function App() {
   // Keep server alive with health checks
   useEffect(() => {
     const keepAlive = setInterval(() => {
-      fetch('https://expense-tracker-1-frb7.onrender.com/health')
+      fetch('https://expense-tracker-xkin.onrender.com/health')
         .catch(() => {}) // Ignore errors
     }, 10 * 60 * 1000) // Every 10 minutes
     
@@ -223,7 +223,7 @@ function App() {
 
   const fetchMonthlyPlan = async (month) => {
     try {
-      const response = await fetch(`https://expense-tracker-1-frb7.onrender.com/api/budget/monthly-plan/${month}`, {
+      const response = await fetch(`https://expense-tracker-xkin.onrender.com/api/budget/monthly-plan/${month}`, {
         headers: getAuthHeaders()
       })
       const data = await response.json()
@@ -239,7 +239,7 @@ function App() {
 
   const fetchBudgetStatus = async (month) => {
     try {
-      const response = await fetch(`https://expense-tracker-1-frb7.onrender.com/api/budget/budget-status/${month}`, {
+      const response = await fetch(`https://expense-tracker-xkin.onrender.com/api/budget/budget-status/${month}`, {
         headers: getAuthHeaders()
       })
       const data = await response.json()
@@ -251,7 +251,7 @@ function App() {
 
   const fetchAnalytics = async () => {
     try {
-      const response = await fetch('https://expense-tracker-1-frb7.onrender.com/api/expenses/analytics', {
+      const response = await fetch('https://expense-tracker-xkin.onrender.com/api/expenses/analytics', {
         headers: getAuthHeaders()
       })
       const data = await response.json()
@@ -270,7 +270,7 @@ function App() {
     e.preventDefault()
     try {
       const endpoint = authMode === 'login' ? 'login' : 'register'
-      const response = await fetch(`https://expense-tracker-1-frb7.onrender.com/api/${endpoint}`, {
+      const response = await fetch(`https://expense-tracker-xkin.onrender.com/api/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authForm)
@@ -312,7 +312,7 @@ function App() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('https://expense-tracker-1-frb7.onrender.com/api/categories', {
+      const response = await fetch('https://expense-tracker-xkin.onrender.com/api/categories', {
         headers: getAuthHeaders()
       })
       if (response.status === 401) {
@@ -331,7 +331,7 @@ function App() {
 
   const fetchExpenses = async () => {
     try {
-      const response = await fetch('https://expense-tracker-1-frb7.onrender.com/api/expenses', {
+      const response = await fetch('https://expense-tracker-xkin.onrender.com/api/expenses', {
         headers: getAuthHeaders()
       })
       if (response.status === 401) {
@@ -347,7 +347,7 @@ function App() {
 
   const fetchSummary = async () => {
     try {
-      const response = await fetch('https://expense-tracker-1-frb7.onrender.com/api/expenses/summary', {
+      const response = await fetch('https://expense-tracker-xkin.onrender.com/api/expenses/summary', {
         headers: getAuthHeaders()
       })
       if (response.status === 401) {
@@ -364,7 +364,7 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      const response = await fetch('https://expense-tracker-1-frb7.onrender.com/api/expenses', {
+      const response = await fetch('https://expense-tracker-xkin.onrender.com/api/expenses', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ ...formData, amount: parseFloat(formData.amount) })
@@ -414,7 +414,7 @@ function App() {
     }
 
     try {
-      await fetch('https://expense-tracker-1-frb7.onrender.com/api/budget/monthly-plan', {
+      await fetch('https://expense-tracker-xkin.onrender.com/api/budget/monthly-plan', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -437,7 +437,7 @@ function App() {
     e.preventDefault()
     if (!newCategory.trim()) return
     try {
-      await fetch('https://expense-tracker-1-frb7.onrender.com/api/categories', {
+      await fetch('https://expense-tracker-xkin.onrender.com/api/categories', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ name: newCategory })
@@ -462,7 +462,7 @@ function App() {
   const handleUpdate = async (e) => {
     e.preventDefault()
     try {
-      await fetch(`https://expense-tracker-1-frb7.onrender.com/api/expenses/${editingId}`, {
+      await fetch(`https://expense-tracker-xkin.onrender.com/api/expenses/${editingId}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({ ...formData, amount: parseFloat(formData.amount) })
@@ -480,7 +480,7 @@ function App() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this expense?')) return
     try {
-      await fetch(`https://expense-tracker-1-frb7.onrender.com/api/expenses/${id}`, {
+      await fetch(`https://expense-tracker-xkin.onrender.com/api/expenses/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       })
